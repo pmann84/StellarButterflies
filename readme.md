@@ -48,6 +48,10 @@ For Windows start the virtual environment:
 
     $ pyenv\Scripts\activate
 
+Go to the correct directory
+
+    $ cd StellarButterflies
+
 To run the server run
 
     $ set FLASK_APP=StellarButterflies.py
@@ -62,6 +66,7 @@ Then access the webpage from
 Create a python virtual environment and install flask
 
     python -m venv <env name>
+    
 Install any packages you need with the pip installer
 
     pip install <package>
