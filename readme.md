@@ -15,6 +15,20 @@ Set the location of the app
 Then access the webpage from 
 http://localhost:5000/
 
+## Creating database to use in the page when running locally
+
+Start the environment
+    $ pyenv\Scripts\activate
+Set the location of the app
+    set FLASK_APP=StellarButterflies.py
+Next create an empty version of the database using
+    flask initdb
+
+## Adding data to the database to use in the page when running locally
+
+Once you have created an empty database you can then add data to it by running commmands like below
+    flask addyear 2016
+
 ## Running App Locally (after setup)
 
 For Windows start the virtual environment:
@@ -36,6 +50,11 @@ e.g. Install Flask
     pip install flask
 Start the environment
     $ pyenv\Scripts\activate
+
+## Taking a snapshot of the environment
+If you need to add to the virtual environment dependencies then you can take a snapshot using
+    pip freeze > env_requirements.txt
+Then commit the changes in this file to the repository
 
 ## Deactivating virtual environment
     $ pyenv\Scripts\deactivate
