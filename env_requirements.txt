@@ -1,7 +1,9 @@
 Flask==0.12.2
 Flask-Bootstrap==3.3.7.1
+Flask-WTF==0.14.2
 Jinja2==2.10
 MarkupSafe==1.0
+WTForms==2.1
 Werkzeug==0.14.1
 click==6.7
 dominate==2.3.1

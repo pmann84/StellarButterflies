@@ -150,3 +150,6 @@ def populate_database_from_dict(db, datadict):
     """
     db.execute(sunspot_insert_statement, sunspot_entry_to_db_tuple(datadict))
     print("Inserted spot data [uuid: {0}, date: {1}, latitude {2}]".format(datadict["uuid"], datadict["observed_datetime"], datadict["latitude"]))
+
+def get_sunspots_for_date_range(dateFrom, dateTo):
+    return

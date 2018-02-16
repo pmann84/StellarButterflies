@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 
 {% block app_content %}
+<script>
+    $(function() {
+        $( ".dtpick" ).datepicker();
+    });
+</script>
+
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>From: {{ form.dateFrom(class="dtpick") }}</p>
+    <p>To: {{ form.dateTo(class="dtpick") }}</p>
+    {{ form.submit() }}
+</form>
 
 {% for entry in entries %}
     <li><b>{{ entry.observed_datetime }}: </b>{{ entry.latitude }}

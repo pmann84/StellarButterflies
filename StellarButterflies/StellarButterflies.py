@@ -4,6 +4,8 @@ import click
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 from flask_bootstrap import Bootstrap
 from .data_parser import add_year
+from flask_wtf import FlaskForm
+from wtforms import DateField, SubmitField
 
 # Create application
 app = Flask(__name__)
@@ -68,10 +70,21 @@ def close_db(error):
 def main():
     return render_template('main.html')
 
-@app.route('/butterfly')
+@app.route('/butterfly', methods=['GET', 'POST'])
 def butterfly():
+    form = DateRangePickerForm()
     db = get_db()
-    cur = db.execute('select observed_datetime, latitude from sunspots')
+    if form.validate_on_submit():
+        print('Displaying data for date range: [{} - {}]'.format(form.dateFrom.data, form.dateTo.data))
+        return render_template('butterfly.html', entries = entries, form = form)
+    #queryString = 'SELECT observed_datetime, latitude FROM sunspots WHERE observed_datetime > \"' + fromDateStr + '\" AND observed_datetime < \"' + toDateStr + '\";'
+    queryString = 'SELECT observed_datetime, latitude FROM sunspots'
+    cur = db.execute(queryString)
     entries = cur.fetchall()
-    return render_template('butterfly.html', entries = entries)
+    return render_template('butterfly.html', entries = entries, form = form)
 
+############## TEMPORARY STUFF ##############
+class DateRangePickerForm(FlaskForm):
+    dateTo = DateField('Pick a Start Date', format="%d/%m/%Y")
+    dateFrom = DateField('Pick an End Date', format="%d/%m/%Y")
+    submit = SubmitField('Go')
