@@ -2,10 +2,14 @@ import os
 import sqlite3
 import click
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
+from flask_bootstrap import Bootstrap
 from .data_parser import add_year
 
 # Create application
 app = Flask(__name__)
+# Bootstrap app
+bootstrap = Bootstrap(app)
+
 # Load config from this file - TODO: make this load from a .ini or .py file 
 app.config.from_object(__name__)
 
@@ -59,10 +63,15 @@ def close_db(error):
         g.sqlite_db.close()
 
 ############## ROUTES ##############
+@app.route('/')
+@app.route('/main')
+def main():
+    return render_template('main.html')
+
 @app.route('/butterfly')
-def butterfly_page():
+def butterfly():
     db = get_db()
     cur = db.execute('select observed_datetime, latitude from sunspots')
     entries = cur.fetchall()
-    return render_template('butterfly_page.html', entries = entries)
+    return render_template('butterfly.html', entries = entries)
 
