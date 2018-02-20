@@ -1,20 +1,27 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-<script>
-    $(function() {
-        $( ".dtpick" ).datepicker();
-    });
-</script>
-
 <form action="" method="post">
+    <p>From: {{ form.dateFrom }}</p>
+    <p>To: {{ form.dateTo }}</p>
     {{ form.hidden_tag() }}
-    <p>From: {{ form.dateFrom(class="dtpick") }}</p>
-    <p>To: {{ form.dateTo(class="dtpick") }}</p>
     {{ form.submit() }}
 </form>
 
-{% for entry in entries %}
+<div id={{ chartID|safe }} class="chart" style="height: 100px; width: 500px"></div>
+<script>
+    var chart_id = "{{ chartID|safe }}"
+    var series = "{{ series|safe }}"
+    var title = "{{ title|safe }}"
+    var xAxis = "{{ xAxis|safe }}"
+    var yAxis = "{{ yAxis|safe }}"
+    var chart = "{{ chart|safe }}"
+</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.src.js"></script>
+<script src="../static/graph.js"></script>
+
+{% for entry in series %}
     <li><b>{{ entry.observed_datetime }}: </b>{{ entry.latitude }}
 {% endfor %}
 

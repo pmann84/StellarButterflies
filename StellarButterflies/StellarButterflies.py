@@ -5,7 +5,10 @@ from flask import Flask, request, session, g, redirect, url_for, abort, render_t
 from flask_bootstrap import Bootstrap
 from .data_parser import add_year
 from flask_wtf import FlaskForm
-from wtforms import DateField, SubmitField
+from wtforms import SubmitField
+from wtforms.fields.html5 import DateField
+from datetime import datetime
+from .sqlite_query_builder import SqliteSelectBuilder
 
 # Create application
 app = Flask(__name__)
@@ -72,19 +75,51 @@ def main():
 
 @app.route('/butterfly', methods=['GET', 'POST'])
 def butterfly():
+    entries = []
     form = DateRangePickerForm()
-    db = get_db()
+    print(form.errors)
+    if form.is_submitted():
+        print("submitted")
+    if form.validate():
+        print("valid")
+    print(form.errors)
     if form.validate_on_submit():
         print('Displaying data for date range: [{} - {}]'.format(form.dateFrom.data, form.dateTo.data))
-        return render_template('butterfly.html', entries = entries, form = form)
-    #queryString = 'SELECT observed_datetime, latitude FROM sunspots WHERE observed_datetime > \"' + fromDateStr + '\" AND observed_datetime < \"' + toDateStr + '\";'
-    queryString = 'SELECT observed_datetime, latitude FROM sunspots'
-    cur = db.execute(queryString)
-    entries = cur.fetchall()
+        # Form the data query
+        fromDate = form.dateFrom.data
+        fromDateStr = fromDate.isoformat()
+        fromDateStr += " 12:00:00"
+        toDate = form.dateTo.data
+        toDateStr = toDate.isoformat()
+        toDateStr += " 12:00:00"
+
+        qryBuilder = SqliteSelectBuilder()
+        queryString = qryBuilder.sSelect("observed_datetime", "latitude") \
+                                .sFrom("sunspots") \
+                                .sWhere("observed_datetime") \
+                                .sGt(fromDateStr) \
+                                .sAnd("observed_datetime") \
+                                .sLt(toDateStr) \
+                                .endWhere() \
+                                .endSelect()
+        print(queryString)
+        db = get_db()
+        cur = db.execute(queryString)
+        entries = cur.fetchall()
+
+        # Sort the chart out
+        chart = {"renderTo": "Butterfly", "type": 'scatter', "height": 350}
+        title = {"text": 'Sunspot Appearance vs Latitude'}
+        series = [{"name": 'Sunspot Latitudinal Position', "data": entries}]
+        xAxis = {"title": {"text": 'Time'}, "gridLineWidth": 1}
+        yAxis = {"title": {"text": 'Latitude'}, "min": 0, "max": 100}
+        return render_template('butterfly.html', chartID='Sunspot_1', chart=chart, series=entries, title=title, xAxis=xAxis, yAxis=yAxis, form = form)
+        #return render_template('butterfly.html', entries = entries, form = form)
     return render_template('butterfly.html', entries = entries, form = form)
 
 ############## TEMPORARY STUFF ##############
 class DateRangePickerForm(FlaskForm):
-    dateTo = DateField('Pick a Start Date', format="%d/%m/%Y")
-    dateFrom = DateField('Pick an End Date', format="%d/%m/%Y")
+    # TODO: add min max validators validators=[DateRange(min=datetime(), max=datetime(datetime.now())]
+    dateFrom = DateField(format='%Y-%m-%d')
+    dateTo = DateField(format='%Y-%m-%d')
     submit = SubmitField('Go')
