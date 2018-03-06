@@ -4,7 +4,7 @@ import click
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 from flask_bootstrap import Bootstrap
 from .data_parser import add_year
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import SubmitField
 from wtforms.fields.html5 import DateField
 from datetime import datetime
@@ -14,16 +14,18 @@ from .sqlite_query_builder import SqliteSelectBuilder
 app = Flask(__name__)
 # Bootstrap app
 bootstrap = Bootstrap(app)
-
 # Load config from this file - TODO: make this load from a .ini or .py file 
 app.config.from_object(__name__)
-
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'database', 'stellar_butterflies.db'),
     SECRET_KEY='99A5D06D-F31F-4D61-B87F-6346682F8DBB',
     USERNAME='admin',
-    PASSWORD='default'
+    PASSWORD='default',
+    WTF_CSRF_ENABLED = False
 ))
+# CSRF
+csrf = CSRFProtect()
+csrf.init_app(app)
 #app.config.from_envvar('STELLAR_BUTTERFLIES_SETTINGS', silent=True)
 
 ############## DATABASE FUNCTIONALITY ##############
@@ -108,14 +110,23 @@ def butterfly():
         entries = cur.fetchall()
 
         # Sort the chart out
-        chart = {"renderTo": "Butterfly", "type": 'scatter', "height": 350}
-        title = {"text": 'Sunspot Appearance vs Latitude'}
-        series = [{"name": 'Sunspot Latitudinal Position', "data": entries}]
-        xAxis = {"title": {"text": 'Time'}, "gridLineWidth": 1}
-        yAxis = {"title": {"text": 'Latitude'}, "min": 0, "max": 100}
-        return render_template('butterfly.html', chartID='Sunspot_1', chart=chart, series=entries, title=title, xAxis=xAxis, yAxis=yAxis, form = form)
-        #return render_template('butterfly.html', entries = entries, form = form)
-    return render_template('butterfly.html', entries = entries, form = form)
+        chart_id = 'butterfly_scatter'
+        #chart = {"renderTo": chartID, "type": 'column', "height": 450}
+        #title = {"text": 'Average Monthly Temperature'}
+        #xAxis = {"categories": ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
+        #yAxis = {"labels": {"format": '{value}°C'}, "title": {"text": 'Temperature'}}
+        #series = [ {"name": 'City', "data": [1,2,3,4,5,6,7,80,9,10,11]} ]
+        print(form.errors)
+        #return render_template("butterfly.html", chartID=chartID, chart=chart, title=title, xAxis=xAxis, yAxis=yAxis, series=series, entries=entries, form = form)
+        #chart = {"renderTo": "Butterfly", "type": 'scatter', "height": 350}
+        #title = {"text": 'Sunspot Appearance vs Latitude'}
+        #series = [{"name": 'Sunspot Latitudinal Position', "data": [[1.0, 2.0], [2.0, 2.0], [3.4, 1.2], [5.1, 0.2], [2.9, 1.8]]}]
+        #xAxis = {"title": {"text": 'Time'}, "gridLineWidth": 1}
+        #yAxis = {"title": {"text": 'Latitude'}, "min": 0, "max": 100}
+        #return render_template("butterfly.html", chartID='Sunspot_1', chart=chart, series=entries, title=title, xAxis=xAxis, yAxis=yAxis, form = form)
+        return render_template("butterfly.html", chartId = chart_id, entries = entries, form = form)
+    # No form execution
+    return render_template('butterfly.html', entries=entries, form = form)
 
 ############## TEMPORARY STUFF ##############
 class DateRangePickerForm(FlaskForm):
