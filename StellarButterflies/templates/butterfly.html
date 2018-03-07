@@ -11,41 +11,61 @@
 
 {%if entries|length > 0 %}
 <body>
-    <div id={{ chartId }} style='width=100%; height=400px;'></div>
+    <div id={{ chartId }}></div>
 </body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="http://code.highcharts.com/modules/exporting.js"></script>
 <script>
     $(function () { 
             var myChart = Highcharts.chart({{ chartId }}, {
                 chart: {
-                    type: 'bar'
+                    type: 'scatter'
+                },
+                boost: {
+                    useGPUTranslations: true,
+                    usePreAllocated: true
                 },
                 title: {
-                    text: 'Fruit Consumption'
+                    text: {{ title|tojson|safe }}
                 },
                 xAxis: {
-                    categories: ['Apples', 'Bananas', 'Oranges']
+                    min: {{ xaxis.min|tojson|safe }},
+                    max: {{ xaxis.max|tojson|safe }},
+                    title: {
+                        text: {{ xaxis.title.text|tojson|safe }}
+                    },
                 },
                 yAxis: {
+                    // Renders faster when we don't have to compute min and max
+                    min: {{ yaxis.min|tojson|safe }},
+                    max: {{ yaxis.max|tojson|safe }},
                     title: {
-                        text: 'Fruit eaten'
+                        text: {{ yaxis.title.text|tojson|safe }}
                     }
                 },
+                legend: {
+                    enabled: false
+                },
                 series: [{
-                    name: 'Jane',
-                    data: [1, 0, 4]
-                }, {
-                    name: 'John',
-                    data: [5, 7, 3]
+                    type: 'scatter',
+                    color: 'rgb(152,0,67)',
+                    data: {{ data|tojson|safe }},
+                    marker: {
+                        radius: 1.0
+                    },
+                    tooltip: {
+                        followPointer: false,
+                        pointFormat: '[{point.x:.1f}, {point.y:.1f}]'
+                    }
                 }]
             });
         });
 </script>
 
-{% for entry in entries %}
-    <li><b>{{ entry.observed_datetime }}: </b>{{ entry.latitude }}
-{% endfor %}
+{# {% for d in data %}
+    <li>{{ d }}
+{% endfor %} #}
 
 {% endif %}
 

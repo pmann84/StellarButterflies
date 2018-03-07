@@ -42,6 +42,7 @@ def add_year(db, year):
             # Add it to the data list
             populate_database_from_dict(db, sd)
     db.commit()
+    print("Year [{0}] successfully inserted!".format(year))
 
 def parse_data_str(data):
     sunspot_dict = None
@@ -153,3 +154,9 @@ def populate_database_from_dict(db, datadict):
 
 def get_sunspots_for_date_range(dateFrom, dateTo):
     return
+
+def datetimestring_to_epoch_time(datetime_str):
+    p = '%Y-%m-%d %H:%M:%S'
+    epoch = datetime(1970, 1, 1)
+    epoch_seconds = (datetime.strptime(datetime_str, p) - epoch).total_seconds()
+    return epoch_seconds

@@ -3,12 +3,13 @@ import sqlite3
 import click
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 from flask_bootstrap import Bootstrap
-from .data_parser import add_year
+from .data_parser import add_year, add_years, datetimestring_to_epoch_time
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import SubmitField
 from wtforms.fields.html5 import DateField
 from datetime import datetime
 from .sqlite_query_builder import SqliteSelectBuilder
+from datetime import datetime
 
 # Create application
 app = Flask(__name__)
@@ -60,7 +61,13 @@ def initdb_command():
 def addyear_command(year):
     """Adds a raw data file for a year of observations to the database"""
     add_year(get_db(), year)
-    print("Year [{0}] successfully inserted!".format(year))
+
+@app.cli.command('addyears')
+@click.argument('start')
+@click.argument('end')
+def addyears_command(start, end):
+    """Adds a range of raw data files for a span of years of observations to the database"""
+    add_years(get_db(), int(start), int(end))
 
 @app.teardown_appcontext
 def close_db(error):
@@ -108,23 +115,26 @@ def butterfly():
         db = get_db()
         cur = db.execute(queryString)
         entries = cur.fetchall()
-
+        # Transform into something the chart can understand namely a list of lists of size 2
+        data = []
+        xmin = datetimestring_to_epoch_time(entries[0][0])
+        xmax = 0
+        for entry in entries:
+            epoch_seconds = datetimestring_to_epoch_time(entry[0])
+            data.append([epoch_seconds, entry[1]])
+            if epoch_seconds > xmax:
+                xmax = epoch_seconds
+            if epoch_seconds < xmin:
+                xmin = epoch_seconds
         # Sort the chart out
         chart_id = 'butterfly_scatter'
-        #chart = {"renderTo": chartID, "type": 'column', "height": 450}
-        #title = {"text": 'Average Monthly Temperature'}
-        #xAxis = {"categories": ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
-        #yAxis = {"labels": {"format": '{value}°C'}, "title": {"text": 'Temperature'}}
-        #series = [ {"name": 'City', "data": [1,2,3,4,5,6,7,80,9,10,11]} ]
+        chart_title = 'Sunspot Appearance vs Latitude'
+        yaxis = {"title": {"text": 'Latitude'}, "min": -90, "max": 90}
+        xaxis = {"title": {"text": 'Date'}, "min": xmin, "max": xmax}
         print(form.errors)
-        #return render_template("butterfly.html", chartID=chartID, chart=chart, title=title, xAxis=xAxis, yAxis=yAxis, series=series, entries=entries, form = form)
         #chart = {"renderTo": "Butterfly", "type": 'scatter', "height": 350}
-        #title = {"text": 'Sunspot Appearance vs Latitude'}
-        #series = [{"name": 'Sunspot Latitudinal Position', "data": [[1.0, 2.0], [2.0, 2.0], [3.4, 1.2], [5.1, 0.2], [2.9, 1.8]]}]
-        #xAxis = {"title": {"text": 'Time'}, "gridLineWidth": 1}
-        #yAxis = {"title": {"text": 'Latitude'}, "min": 0, "max": 100}
         #return render_template("butterfly.html", chartID='Sunspot_1', chart=chart, series=entries, title=title, xAxis=xAxis, yAxis=yAxis, form = form)
-        return render_template("butterfly.html", chartId = chart_id, entries = entries, form = form)
+        return render_template("butterfly.html", chartId = chart_id, title = chart_title, data = data, xaxis = xaxis, yaxis = yaxis, entries = entries, form = form)
     # No form execution
     return render_template('butterfly.html', entries=entries, form = form)
 
