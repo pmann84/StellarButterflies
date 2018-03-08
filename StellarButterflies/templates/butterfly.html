@@ -2,11 +2,22 @@
 
 {% block app_content %}
 
-<form action="" method="post" role="form">
+<form action="{{url_for('butterfly')}}" class="form-horizontal" method="post">
     {{ form.hidden_tag() }}
-    <p>From: {{ form.dateFrom }}</p>
-    <p>To: {{ form.dateTo }}</p>
-    {{ form.submit() }}
+    <h4 class="form-heading">Select dates to plot sunspot data</h4>
+    <div class="form-group ">
+        {{form.dateFrom.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+            {{ form.dateFrom(class="form-control") }} 
+        </div>
+    </div>
+    <div class="form-group ">
+        {{form.dateTo.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+            {{ form.dateTo(class="form-control") }} 
+        </div>
+    </div>
+    <button class="btn btn-success" type="submit">Plot</button>
 </form>
 
 {%if entries|length > 0 %}
@@ -30,6 +41,7 @@
                     text: {{ title|tojson|safe }}
                 },
                 xAxis: {
+                    type:'datetime',
                     min: {{ xaxis.min|tojson|safe }},
                     max: {{ xaxis.max|tojson|safe }},
                     title: {
@@ -62,6 +74,8 @@
             });
         });
 </script>
+
+<p>{{ entries|length }} records fetched from database.</p>
 
 {# {% for d in data %}
     <li>{{ d }}

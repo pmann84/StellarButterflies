@@ -117,10 +117,10 @@ def butterfly():
         entries = cur.fetchall()
         # Transform into something the chart can understand namely a list of lists of size 2
         data = []
-        xmin = datetimestring_to_epoch_time(entries[0][0])
+        xmin = datetimestring_to_epoch_time(entries[0][0])*1000
         xmax = 0
         for entry in entries:
-            epoch_seconds = datetimestring_to_epoch_time(entry[0])
+            epoch_seconds = datetimestring_to_epoch_time(entry[0])*1000
             data.append([epoch_seconds, entry[1]])
             if epoch_seconds > xmax:
                 xmax = epoch_seconds
@@ -141,6 +141,5 @@ def butterfly():
 ############## TEMPORARY STUFF ##############
 class DateRangePickerForm(FlaskForm):
     # TODO: add min max validators validators=[DateRange(min=datetime(), max=datetime(datetime.now())]
-    dateFrom = DateField(format='%Y-%m-%d')
-    dateTo = DateField(format='%Y-%m-%d')
-    submit = SubmitField('Go')
+    dateFrom = DateField('Start Date', format='%Y-%m-%d')
+    dateTo = DateField('End Date', format='%Y-%m-%d')
