@@ -4,6 +4,7 @@ class SqliteSelectBuilder:
         self.columns = []
         self.table_name = ""
         self.where_clause = ""
+        self.group_by = []
 
     def sSelect(self, *columns):
         for col in columns:
@@ -18,6 +19,10 @@ class SqliteSelectBuilder:
         where_clause_builder = SqliteWhereBuilder(self, column_name)
         return where_clause_builder
 
+    def sGroupBy(self, column_name):
+        self.group_by.append(column_name)
+        return self
+        
     def endSelect(self):
         # Setup SELECT
         if len(self.columns) == 0:
@@ -33,6 +38,10 @@ class SqliteSelectBuilder:
         if self.where_clause != "":
             self.query_str += " WHERE "
             self.query_str += self.where_clause
+        # GROUP BY
+        if len(self.group_by) > 0:
+            self.query_str += " GROUP BY "
+            self.query_str += ", ".join(self.group_by)
         return self.query_str
 
 class SqliteWhereBuilder:

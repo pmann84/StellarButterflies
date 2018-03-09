@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+
+<div class="row">
+    {# Left pad column #}
+    <div class="col-sm-1">
+    </div>
+    {# Centre column to contain all the stuff #}
+    <div class="col-sm-10">
+        {% block butterfly_content %}{% endblock %}
+    </div>
+    {# Right pad column #}
+    <div class="col-sm-1">
+    </div>
+</div>
+
+{% endblock %}

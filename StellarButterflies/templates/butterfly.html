@@ -1,68 +1,129 @@
-{% extends "base.html" %}
+{% extends "butterfly_layout.html" %}
 
-{% block app_content %}
+{% block butterfly_content %}
 
 <form action="{{url_for('butterfly')}}" class="form-horizontal" method="post">
-    {{ form.hidden_tag() }}
-    <h4 class="form-heading">Select dates to plot sunspot data</h4>
-    <div class="form-group ">
-        {{form.dateFrom.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-            {{ form.dateFrom(class="form-control") }} 
+        {{ form.hidden_tag() }}
+
+        <h4 class="form-heading">Select dates to plot sunspot data</h4>
+
+        <div class="form-group ">
+            {{form.dateFrom.label(class="col-sm-2")}}
+            <div class="col-sm-3">
+                {{ form.dateFrom(class="form-control") }} 
+            </div>
         </div>
-    </div>
-    <div class="form-group ">
-        {{form.dateTo.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-            {{ form.dateTo(class="form-control") }} 
+
+        <div class="form-group ">
+            {{form.dateTo.label(class="col-sm-2")}}
+            <div class="col-sm-3">
+                {{ form.dateTo(class="form-control") }} 
+            </div>
         </div>
-    </div>
-    <button class="btn btn-success" type="submit">Plot</button>
+        <button class="btn btn-success" type="submit">Plot</button>
 </form>
 
-{%if entries|length > 0 %}
+{%if scatter_chart_info.data|length > 0 %}
 <body>
-    <div id={{ chartId }}></div>
+    <div id={{ scatter_chart_info.chart_id }}></div>
 </body>
+<p>{{ scatter_chart_info.data|length }} records fetched from database.</p>
+<body>
+    <div id={{ count_chart_info.chart_id }}></div>
+</body>
+<p>{{ count_chart_info.data|length }} records fetched from database.</p>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="http://code.highcharts.com/highcharts.js"></script>
 <script src="http://code.highcharts.com/modules/exporting.js"></script>
 <script>
     $(function () { 
-            var myChart = Highcharts.chart({{ chartId }}, {
+            var butterflyChart = Highcharts.chart({{ scatter_chart_info.chart_id }}, {
                 chart: {
-                    type: 'scatter'
+                    type: {{ scatter_chart_info.chart_type|tojson|safe }}
                 },
                 boost: {
                     useGPUTranslations: true,
                     usePreAllocated: true
                 },
                 title: {
-                    text: {{ title|tojson|safe }}
+                    text: {{ scatter_chart_info.chart_title|tojson|safe }}
                 },
                 xAxis: {
                     type:'datetime',
-                    min: {{ xaxis.min|tojson|safe }},
-                    max: {{ xaxis.max|tojson|safe }},
+                    min: {{ scatter_chart_info.xaxis.min|tojson|safe }},
+                    max: {{ scatter_chart_info.xaxis.max|tojson|safe }},
                     title: {
-                        text: {{ xaxis.title.text|tojson|safe }}
+                        text: {{ scatter_chart_info.xaxis.title.text|tojson|safe }}
                     },
                 },
                 yAxis: {
                     // Renders faster when we don't have to compute min and max
-                    min: {{ yaxis.min|tojson|safe }},
-                    max: {{ yaxis.max|tojson|safe }},
+                    min: {{ scatter_chart_info.yaxis.min|tojson|safe }},
+                    max: {{ scatter_chart_info.yaxis.max|tojson|safe }},
                     title: {
-                        text: {{ yaxis.title.text|tojson|safe }}
+                        text: {{ scatter_chart_info.yaxis.title.text|tojson|safe }}
                     }
                 },
                 legend: {
                     enabled: false
                 },
                 series: [{
-                    type: 'scatter',
+                    type: {{ scatter_chart_info.chart_type|tojson|safe }},
                     color: 'rgb(152,0,67)',
-                    data: {{ data|tojson|safe }},
+                    data: {{ scatter_chart_info.data|tojson|safe }},
+                    marker: {
+                        radius: 1.0
+                    },
+                    tooltip: {
+                        followPointer: false,
+                        pointFormat: '[{point.x:.1f}, {point.y:.1f}]'
+                    }
+                }]
+            });
+
+            var countChart = Highcharts.chart({{ count_chart_info.chart_id }}, {
+                chart: {
+                    type: {{ count_chart_info.chart_type|tojson|safe }}
+                },
+                plotOptions: {
+                    series: {
+                        lineWidth: 0.5,
+                        states: {
+                            hover: {
+                                lineWidthPlus: 0
+                            }
+                        }
+                    }
+                },
+                boost: {
+                    useGPUTranslations: true,
+                    usePreAllocated: true
+                },
+                title: {
+                    text: {{ count_chart_info.chart_title|tojson|safe }}
+                },
+                xAxis: {
+                    type:'datetime',
+                    min: {{ count_chart_info.xaxis.min|tojson|safe }},
+                    max: {{ count_chart_info.xaxis.max|tojson|safe }},
+                    title: {
+                        text: {{ count_chart_info.xaxis.title.text|tojson|safe }}
+                    },
+                },
+                yAxis: {
+                    // Renders faster when we don't have to compute min and max
+                    min: {{ count_chart_info.yaxis.min|tojson|safe }},
+                    max: {{ count_chart_info.yaxis.max|tojson|safe }},
+                    title: {
+                        text: {{ count_chart_info.yaxis.title.text|tojson|safe }}
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                series: [{
+                    color: 'rgb(152,0,67)',
+                    data: {{ count_chart_info.data|tojson|safe }},
                     marker: {
                         radius: 1.0
                     },
@@ -75,11 +136,6 @@
         });
 </script>
 
-<p>{{ entries|length }} records fetched from database.</p>
-
-{# {% for d in data %}
-    <li>{{ d }}
-{% endfor %} #}
 
 {% endif %}
 

@@ -8,8 +8,7 @@ from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import SubmitField
 from wtforms.fields.html5 import DateField
 from datetime import datetime
-from .sqlite_query_builder import SqliteSelectBuilder
-from datetime import datetime
+from .database_queries import *
 
 # Create application
 app = Flask(__name__)
@@ -95,50 +94,84 @@ def butterfly():
     if form.validate_on_submit():
         print('Displaying data for date range: [{} - {}]'.format(form.dateFrom.data, form.dateTo.data))
         # Form the data query
-        fromDate = form.dateFrom.data
-        fromDateStr = fromDate.isoformat()
-        fromDateStr += " 12:00:00"
-        toDate = form.dateTo.data
-        toDateStr = toDate.isoformat()
-        toDateStr += " 12:00:00"
-
-        qryBuilder = SqliteSelectBuilder()
-        queryString = qryBuilder.sSelect("observed_datetime", "latitude") \
-                                .sFrom("sunspots") \
-                                .sWhere("observed_datetime") \
-                                .sGt(fromDateStr) \
-                                .sAnd("observed_datetime") \
-                                .sLt(toDateStr) \
-                                .endWhere() \
-                                .endSelect()
-        print(queryString)
+        fromDateStr, toDateStr = get_date_range_from_form(form)
         db = get_db()
-        cur = db.execute(queryString)
-        entries = cur.fetchall()
+        # Get the butterfly data
+        entries = get_observed_sunspots_in_date_range_data_entries(db, fromDateStr, toDateStr)
         # Transform into something the chart can understand namely a list of lists of size 2
-        data = []
-        xmin = datetimestring_to_epoch_time(entries[0][0])*1000
-        xmax = 0
-        for entry in entries:
-            epoch_seconds = datetimestring_to_epoch_time(entry[0])*1000
-            data.append([epoch_seconds, entry[1]])
-            if epoch_seconds > xmax:
-                xmax = epoch_seconds
-            if epoch_seconds < xmin:
-                xmin = epoch_seconds
+        data, xmin, xmax, ymin, ymax = prepare_data_for_chart(entries)
+        ymin = -90.0
+        ymax = 90.0
         # Sort the chart out
-        chart_id = 'butterfly_scatter'
-        chart_title = 'Sunspot Appearance vs Latitude'
-        yaxis = {"title": {"text": 'Latitude'}, "min": -90, "max": 90}
-        xaxis = {"title": {"text": 'Date'}, "min": xmin, "max": xmax}
+        scatter_chart_info = { "chart_id": 'butterfly_scatter',
+                               "chart_type" : 'scatter',
+                               "chart_title": 'Sunspot Appearance vs Latitude',
+                               "yaxis": {"title": {"text": 'Latitude'}, "min": ymin, "max": ymax} ,
+                               "xaxis": {"title": {"text": 'Date'}, "min": xmin, "max": xmax},
+                               "data": data }
+
+        # Get the count data
+        entries = get_sunspot_count_in_date_range_data_entries(db, fromDateStr, toDateStr)
+        # Transform into something the chart can understand namely a list of lists of size 2
+        count_data, count_xmin, count_xmax, count_ymin, count_ymax = prepare_data_for_chart(entries)
+        # Sort the chart out
+        count_chart_info = { "chart_id": 'count_chart',
+                             "chart_type" : 'spline',
+                             "chart_title": 'Number of Sunspots per day',
+                             "yaxis": {"title": {"text": 'Number of Sunspots'}, "min": count_ymin, "max": count_ymax} ,
+                             "xaxis": {"title": {"text": 'Date'}, "min": count_xmin, "max": count_xmax},
+                             "data": count_data }
+
+
         print(form.errors)
-        #chart = {"renderTo": "Butterfly", "type": 'scatter', "height": 350}
-        #return render_template("butterfly.html", chartID='Sunspot_1', chart=chart, series=entries, title=title, xAxis=xAxis, yAxis=yAxis, form = form)
-        return render_template("butterfly.html", chartId = chart_id, title = chart_title, data = data, xaxis = xaxis, yaxis = yaxis, entries = entries, form = form)
+        return render_template("butterfly.html", scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
     # No form execution
     return render_template('butterfly.html', entries=entries, form = form)
 
 ############## TEMPORARY STUFF ##############
+def get_date_range_from_form(form):
+    fromDate = form.dateFrom.data
+    fromDateStr = fromDate.isoformat()
+    fromDateStr += " 12:00:00"
+    toDate = form.dateTo.data
+    toDateStr = toDate.isoformat()
+    toDateStr += " 12:00:00"
+    return fromDateStr, toDateStr
+    
+def get_observed_sunspots_in_date_range_data_entries(db, fromDateStr, toDateStr):
+    queryString = get_observed_sunspots_in_date_range(fromDateStr, toDateStr)
+    print(queryString)
+    cur = db.execute(queryString)
+    entries = cur.fetchall()
+    return entries
+
+def get_sunspot_count_in_date_range_data_entries(db, fromDateStr, toDateStr):
+    queryString = get_sunspot_count_in_date_range(fromDateStr, toDateStr)
+    print(queryString)
+    cur = db.execute(queryString)
+    entries = cur.fetchall()
+    return entries
+
+def prepare_data_for_chart(entries):
+    # Transform into something the chart can understand namely a list of lists of size 2
+    data = []
+    xmin = datetimestring_to_epoch_time(entries[0][0])*1000
+    xmax = 0
+    ymin = entries[0][1]
+    ymax = 0
+    for entry in entries:
+        epoch_seconds = datetimestring_to_epoch_time(entry[0])*1000
+        data.append([epoch_seconds, entry[1]])
+        if epoch_seconds > xmax:
+            xmax = epoch_seconds
+        if epoch_seconds < xmin:
+            xmin = epoch_seconds
+        if entry[1] > ymax:
+            ymax = entry[1]
+        if entry[1] < ymin:
+            ymin = entry[1]
+    return data, xmin, xmax, ymin, ymax
+
 class DateRangePickerForm(FlaskForm):
     # TODO: add min max validators validators=[DateRange(min=datetime(), max=datetime(datetime.now())]
     dateFrom = DateField('Start Date', format='%Y-%m-%d')
