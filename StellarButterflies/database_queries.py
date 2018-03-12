@@ -24,5 +24,3 @@ def get_sunspot_count_in_date_range(fromDateStr, toDateStr):
                             .sGroupBy("observed_datetime") \
                             .endSelect()
     return queryString
-
-#select observed_datetime, count(uuid) from sunspots where observed_datetime > "<FROM_DATE>" AND observed_datetime < "<TO_DATE>" group by observed_datetime

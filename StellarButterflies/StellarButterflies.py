@@ -81,8 +81,8 @@ def close_db(error):
 def main():
     return render_template('main.html')
 
-@app.route('/butterfly', methods=['GET', 'POST'])
-def butterfly():
+@app.route('/plots', methods=['GET', 'POST'])
+def plots():
     entries = []
     form = DateRangePickerForm()
     print(form.errors)
@@ -90,7 +90,6 @@ def butterfly():
         print("submitted")
     if form.validate():
         print("valid")
-    print(form.errors)
     if form.validate_on_submit():
         print('Displaying data for date range: [{} - {}]'.format(form.dateFrom.data, form.dateTo.data))
         # Form the data query
@@ -124,9 +123,12 @@ def butterfly():
 
 
         print(form.errors)
-        return render_template("butterfly.html", scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
+        return render_template("plots.html", scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
     # No form execution
-    return render_template('butterfly.html', entries=entries, form = form)
+    print(form.errors)
+    scatter_chart_info = {}
+    count_chart_info = {}
+    return render_template('plots.html', scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
 
 ############## TEMPORARY STUFF ##############
 def get_date_range_from_form(form):

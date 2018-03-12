@@ -1,8 +1,8 @@
-{% extends "butterfly_layout.html" %}
+{% extends "plots_layout.html" %}
 
-{% block butterfly_content %}
+{% block plots_content %}
 
-<form action="{{url_for('butterfly')}}" class="form-horizontal" method="post">
+<form action="{{url_for('plots')}}" class="form-horizontal" method="post">
         {{ form.hidden_tag() }}
 
         <h4 class="form-heading">Select dates to plot sunspot data</h4>
