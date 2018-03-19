@@ -2,6 +2,35 @@
 
 {% block app_content %}
 
-<h1>Welcome to Stellar Butterflies Home!</h1>
+<h1>Welcome to Stellar Butterflies</h1>
+
+<p>This site started with the idea that sunspot observations were kept in text files. This makes it 
+    hard to generate plots using date ranges or easily searching as you would data in a database. The 
+    aim of this project was to be able to produce butterfly style diagrams entering only a date range.</p>
+<br/>
+
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8">
+        <div class="thumbnail">
+            <a href="{{ main_image.path }}">
+                <img src="{{ main_image.path }}" alt="sun_main" style="width:100%">
+            </a>
+            <div class="caption">
+                <p>{{ main_image.shorttext|safe }}</p>
+                <p>Credit:<a href="{{ main_image.srclink|safe }}"> {{ main_image.credits|safe }}</a></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+
+<br/>
+<p>This page will hopefully expand into a valuable resource to find out anything about The Sun, Stars, 
+    Sunspots, Starspots and stellar magnetic fields. This site is always under revision and welcomes 
+    comments, corrections and suggestions. You can send these to anemailaddress@blarg.com</p>
+
+<p>All the information here will be credited accordingly from the source it came from. If the listed 
+    accreditations are incorrect please do get in touch so that we can make the necessary changes!</p>
 
 {% endblock %}

@@ -9,6 +9,11 @@ from wtforms import SubmitField
 from wtforms.fields.html5 import DateField
 from datetime import datetime
 from .database_queries import *
+from pprint import pprint
+import json
+
+# Globals
+IMAGE_FOLDER = os.path.join('static', 'images')
 
 # Create application
 app = Flask(__name__)
@@ -79,7 +84,9 @@ def close_db(error):
 @app.route('/')
 @app.route('/main')
 def main():
-    return render_template('main.html')
+    main_image = load_image_info("sun_main")
+    print(main_image)
+    return render_template('main.html', main_image=main_image)
 
 @app.route('/plots', methods=['GET', 'POST'])
 def plots():
@@ -98,7 +105,7 @@ def plots():
         # Get the butterfly data
         entries = get_observed_sunspots_in_date_range_data_entries(db, fromDateStr, toDateStr)
         # Transform into something the chart can understand namely a list of lists of size 2
-        data, xmin, xmax, ymin, ymax = prepare_data_for_chart(entries)
+        data, xmin, xmax, ymin, ymax = prepare_data_for_colour_chart(entries)
         ymin = -90.0
         ymax = 90.0
         # Sort the chart out
@@ -108,7 +115,6 @@ def plots():
                                "yaxis": {"title": {"text": 'Latitude'}, "min": ymin, "max": ymax} ,
                                "xaxis": {"title": {"text": 'Date'}, "min": xmin, "max": xmax},
                                "data": data }
-
         # Get the count data
         entries = get_sunspot_count_in_date_range_data_entries(db, fromDateStr, toDateStr)
         # Transform into something the chart can understand namely a list of lists of size 2
@@ -120,8 +126,6 @@ def plots():
                              "yaxis": {"title": {"text": 'Number of Sunspots'}, "min": count_ymin, "max": count_ymax} ,
                              "xaxis": {"title": {"text": 'Date'}, "min": count_xmin, "max": count_xmax},
                              "data": count_data }
-
-
         print(form.errors)
         return render_template("plots.html", scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
     # No form execution
@@ -131,6 +135,18 @@ def plots():
     return render_template('plots.html', scatter_chart_info = scatter_chart_info, count_chart_info = count_chart_info, form = form)
 
 ############## TEMPORARY STUFF ##############
+
+def load_image_info(name):
+    this_image_folder = os.path.join(IMAGE_FOLDER, name)
+    this_image_path = os.path.join(this_image_folder, '{}.jpg'.format(name))
+    this_image_text_path = os.path.join(this_image_folder, '{}.json'.format(name))
+    # Read the text from the file
+    image_info = {}
+    with open(this_image_text_path, "r") as f:
+        image_info = json.load(f)
+    image_info["path"] = this_image_path
+    return image_info
+
 def get_date_range_from_form(form):
     fromDate = form.dateFrom.data
     fromDateStr = fromDate.isoformat()
@@ -141,7 +157,7 @@ def get_date_range_from_form(form):
     return fromDateStr, toDateStr
     
 def get_observed_sunspots_in_date_range_data_entries(db, fromDateStr, toDateStr):
-    queryString = get_observed_sunspots_in_date_range(fromDateStr, toDateStr)
+    queryString = get_observed_sunspots_in_date_range_coloured_by_area(fromDateStr, toDateStr)
     print(queryString)
     cur = db.execute(queryString)
     entries = cur.fetchall()
@@ -154,6 +170,49 @@ def get_sunspot_count_in_date_range_data_entries(db, fromDateStr, toDateStr):
     entries = cur.fetchall()
     return entries
 
+def get_area_colour(area):
+    if area < 100:
+        return '#000000'
+    elif area < 1000:
+        return '#ffff00'
+    elif area < 10000:
+        return '#ff9900'
+    else:
+        return 'ff0000' 
+
+def prepare_data_for_colour_chart(entries):
+    # Transform into something the chart can understand namely a list of lists of size 2
+    # Or it can be a list of dictionaries - [{x: 0.21, y:194.1, marker : {fillColor:'#000000'}}, ... ] so you can set individual point colours
+    # Loop entries and get max and min of the extra column
+    min_area = 0
+    max_area = entries[0][2]
+    for entry in entries:
+        if entry[2] > max_area:
+            xmax = entry[2]
+        if entry[2] < min_area:
+            xmin = entry[2]
+
+    # Billionths of solar area so 0.00000001 of the solar area
+    data = []
+    xmin = datetimestring_to_epoch_time(entries[0][0])*1000
+    xmax = 0
+    ymin = entries[0][1]
+    ymax = 0
+     # Loop here and add an entry "marker" : {"fillColor": '#000000'} to the point dict
+    for entry in entries:
+        epoch_seconds = datetimestring_to_epoch_time(entry[0])*1000
+        point_dict = {"x": epoch_seconds, "y": entry[1], "marker" : {"fillColor": get_area_colour(entry[2])}}
+        data.append(point_dict)
+        if epoch_seconds > xmax:
+            xmax = epoch_seconds
+        if epoch_seconds < xmin:
+            xmin = epoch_seconds
+        if entry[1] > ymax:
+            ymax = entry[1]
+        if entry[1] < ymin:
+            ymin = entry[1]
+    return data, xmin, xmax, ymin, ymax
+
 def prepare_data_for_chart(entries):
     # Transform into something the chart can understand namely a list of lists of size 2
     data = []
@@ -163,7 +222,8 @@ def prepare_data_for_chart(entries):
     ymax = 0
     for entry in entries:
         epoch_seconds = datetimestring_to_epoch_time(entry[0])*1000
-        data.append([epoch_seconds, entry[1]])
+        point_dict = [epoch_seconds, entry[1]]
+        data.append(point_dict)
         if epoch_seconds > xmax:
             xmax = epoch_seconds
         if epoch_seconds < xmin:
